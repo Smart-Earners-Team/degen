@@ -557,7 +557,6 @@ contract BNBm is Context, IERC20, Ownable {
 
     uint256 private _buyLiquidityFee = 0;
     uint256 private _buyMarketingFee = 3;
-    uint256 private lotteryFee = 1;
     
     uint256 private _sellLiquidityFee = 0;
     uint256 private _sellMarketingFee = 3;
