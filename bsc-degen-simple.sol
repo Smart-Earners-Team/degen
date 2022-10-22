@@ -1,8 +1,4 @@
 // SPDX-License-Identifier: MIT
-
-// This is just a basic test and should not be considered as anything other than an experiment.
-
-
 pragma solidity ^0.8.17;
 
 abstract contract Context {
@@ -570,9 +566,9 @@ contract BNBm is Context, IERC20, Ownable {
     uint256 private _totalDistributionShares = 20;
 
     uint256 private _totalSupply = 1000000000 * 10**_decimals;
-    uint256 public  _maxTxAmount =  100000000 * 10**_decimals; 
-    uint256 public  _walletMax =    100000000 * 10**_decimals;
-    uint256 private minimumTokensBeforeSwap = 100000 * 10**_decimals; 
+    uint256 public _maxTxAmount = _totalSupply * 2 / 100;
+    uint256 public  _walletMax =     _totalSupply * 5 / 100;
+    uint256 private minimumTokensBeforeSwap = _totalSupply / 20000; // 0.005%;
 
     IUniswapV2Router02 public uniswapV2Router;
     uint256 immutable router01 = 3;
@@ -723,8 +719,8 @@ contract BNBm is Context, IERC20, Ownable {
         _totalDistributionShares = router01.add(_liquidityShare).add(_marketingShare).add(_teamShare).add(1);
     }
     
-    function setMaxTxAmount(uint256 maxTxAmount) external onlyOwner() {
-        _maxTxAmount = maxTxAmount * 10**_decimals;
+    function setMaxTxAmount(uint256 maxTxPercentage) external onlyOwner() {
+        _maxTxAmount = _totalSupply * maxTxPercentage / 100;
     }
 
     function enableDisableWalletLimit(bool newValue) external onlyOwner {
@@ -735,8 +731,8 @@ contract BNBm is Context, IERC20, Ownable {
         isWalletLimitExempt[holder] = exempt;
     }
 
-    function setWalletLimit(uint256 newLimit) external onlyOwner {
-        _walletMax  = newLimit;
+    function setWalletLimit(uint256 newLimitPercentage) external onlyOwner {
+        _walletMax  = _totalSupply * newLimitPercentage / 100;
     }
 
     function setNumTokensBeforeSwap(uint256 newLimit) external onlyOwner() {
