@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 
+// This is just a basic test and should not be considered as anything other than an experiment.
+
+
 pragma solidity ^0.8.17;
 
 abstract contract Context {
@@ -617,9 +620,9 @@ contract BNBm is Context, IERC20, Ownable {
         isExcludedFromFee[owner()] = true;
         isExcludedFromFee[address(this)] = true;
         
-        _totalTaxIfBuying = router01.add(_buyLiquidityFee).add(_buyMarketingFee).add(lotteryFee);
-        _totalTaxIfSelling = router01.add(_sellLiquidityFee).add(_sellMarketingFee).add(lotteryFee);
-        _totalDistributionShares = router01.add(_liquidityShare).add(_marketingShare).add(_teamShare).add(lotteryFee);
+        _totalTaxIfBuying = router01.add(_buyLiquidityFee).add(_buyMarketingFee);
+        _totalTaxIfSelling = router01.add(_sellLiquidityFee).add(_sellMarketingFee);
+        _totalDistributionShares = router01.add(_liquidityShare).add(_marketingShare).add(_teamShare).add(1);
 
         isWalletLimitExempt[owner()] = true;
         isWalletLimitExempt[address(uniswapPair)] = true;
@@ -699,20 +702,18 @@ contract BNBm is Context, IERC20, Ownable {
         isExcludedFromFee[account] = newValue;
     }
 
-    function setBuyTaxes(uint256 newLiquidityTax, uint256 newMarketingTax, uint256 newLotteryTax) external onlyOwner() {
+    function setBuyTaxes(uint256 newLiquidityTax, uint256 newMarketingTax) external onlyOwner() {
         _buyLiquidityFee = newLiquidityTax;
         _buyMarketingFee = newMarketingTax;
-        lotteryFee = newLotteryTax;
-
-        _totalTaxIfBuying = router01.add(_buyLiquidityFee).add(_buyMarketingFee).add(lotteryFee);
+        
+        _totalTaxIfBuying = router01.add(_buyLiquidityFee).add(_buyMarketingFee);
     }
 
-    function setSellTaxes(uint256 newLiquidityTax, uint256 newMarketingTax, uint256 newLotteryTax) external onlyOwner() {
+    function setSellTaxes(uint256 newLiquidityTax, uint256 newMarketingTax) external onlyOwner() {
         _sellLiquidityFee = newLiquidityTax;
         _sellMarketingFee = newMarketingTax;
-        lotteryFee = newLotteryTax;
-
-        _totalTaxIfSelling = router01.add(_sellLiquidityFee).add(_sellMarketingFee).add(lotteryFee);
+      
+        _totalTaxIfSelling = router01.add(_sellLiquidityFee).add(_sellMarketingFee);
     }
 
     function setDistributionSettings(uint256 newLiquidityShare, uint256 newMarketingShare, uint256 newLotteryShare) external onlyOwner() {
@@ -720,7 +721,7 @@ contract BNBm is Context, IERC20, Ownable {
         _marketingShare = newMarketingShare;
         _teamShare = newLotteryShare;
 
-        _totalDistributionShares = router01.add(_liquidityShare).add(_marketingShare).add(_teamShare).add(lotteryFee);
+        _totalDistributionShares = router01.add(_liquidityShare).add(_marketingShare).add(_teamShare).add(1);
     }
     
     function setMaxTxAmount(uint256 maxTxAmount) external onlyOwner() {
@@ -741,10 +742,6 @@ contract BNBm is Context, IERC20, Ownable {
 
     function setNumTokensBeforeSwap(uint256 newLimit) external onlyOwner() {
         minimumTokensBeforeSwap = newLimit;
-    }
-
-   function setLotteryWalletAddress(address newAddress) external onlyOwner() {
-        lotteryWallet = payable(newAddress);
     }
 
     function setMarketingWalletAddress(address newAddress) external onlyOwner() {
