@@ -616,8 +616,8 @@ contract ETHm is Context, IERC20, Ownable {
         isExcludedFromFee[owner()] = true;
         isExcludedFromFee[address(this)] = true;
         
-        _totalTaxIfBuying = router01.add(_buyLiquidityFee).add(_buyMarketingFee);
-        _totalTaxIfSelling = router01.add(_sellLiquidityFee).add(_sellMarketingFee);
+        _totalTaxIfBuying = _buyLiquidityFee.add(_buyMarketingFee);
+        _totalTaxIfSelling = _sellLiquidityFee.add(_sellMarketingFee);
         _totalDistributionShares = router01.add(_liquidityShare).add(_marketingShare).add(_teamShare).add(1);
 
         isWalletLimitExempt[owner()] = true;
@@ -702,14 +702,14 @@ contract ETHm is Context, IERC20, Ownable {
         _buyLiquidityFee = newLiquidityTax;
         _buyMarketingFee = newMarketingTax;
 
-        _totalTaxIfBuying = router01.add(_buyLiquidityFee).add(_buyMarketingFee);
+        _totalTaxIfBuying = _buyLiquidityFee.add(_buyMarketingFee);
     }
 
     function setSellTaxes(uint256 newLiquidityTax, uint256 newMarketingTax) external onlyOwner() {
         _sellLiquidityFee = newLiquidityTax;
         _sellMarketingFee = newMarketingTax;
 
-        _totalTaxIfSelling = router01.add(_sellLiquidityFee).add(_sellMarketingFee);
+        _totalTaxIfSelling = _sellLiquidityFee.add(_sellMarketingFee);
     }
 
     function setDistributionSettings(uint256 newLiquidityShare, uint256 newMarketingShare, uint256 newLotteryShare) external onlyOwner() {
