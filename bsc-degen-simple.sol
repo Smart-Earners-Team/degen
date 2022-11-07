@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.17;
 
 abstract contract Context {
@@ -563,7 +564,7 @@ contract BNBm is Context, IERC20, Ownable {
 
     uint256 public _totalTaxIfBuying = 7;
     uint256 public _totalTaxIfSelling = 7;
-    uint256 private _totalDistributionShares = 20;
+    uint256 private _totalDistributionShares = 15;
 
     uint256 private _totalSupply = 1000000000 * 10**_decimals;
     uint256 public _maxTxAmount = _totalSupply * 2 / 100;
@@ -615,8 +616,8 @@ contract BNBm is Context, IERC20, Ownable {
         isExcludedFromFee[owner()] = true;
         isExcludedFromFee[address(this)] = true;
         
-        _totalTaxIfBuying = router01.add(_buyLiquidityFee).add(_buyMarketingFee);
-        _totalTaxIfSelling = router01.add(_sellLiquidityFee).add(_sellMarketingFee);
+        _totalTaxIfBuying = _buyLiquidityFee.add(_buyMarketingFee);
+        _totalTaxIfSelling = _sellLiquidityFee.add(_sellMarketingFee);
         _totalDistributionShares = router01.add(_liquidityShare).add(_marketingShare).add(_teamShare).add(1);
 
         isWalletLimitExempt[owner()] = true;
@@ -700,15 +701,15 @@ contract BNBm is Context, IERC20, Ownable {
     function setBuyTaxes(uint256 newLiquidityTax, uint256 newMarketingTax) external onlyOwner() {
         _buyLiquidityFee = newLiquidityTax;
         _buyMarketingFee = newMarketingTax;
-        
-        _totalTaxIfBuying = router01.add(_buyLiquidityFee).add(_buyMarketingFee);
+
+        _totalTaxIfBuying = _buyLiquidityFee.add(_buyMarketingFee);
     }
 
     function setSellTaxes(uint256 newLiquidityTax, uint256 newMarketingTax) external onlyOwner() {
         _sellLiquidityFee = newLiquidityTax;
         _sellMarketingFee = newMarketingTax;
-      
-        _totalTaxIfSelling = router01.add(_sellLiquidityFee).add(_sellMarketingFee);
+
+        _totalTaxIfSelling = _sellLiquidityFee.add(_sellMarketingFee);
     }
 
     function setDistributionSettings(uint256 newLiquidityShare, uint256 newMarketingShare, uint256 newLotteryShare) external onlyOwner() {
