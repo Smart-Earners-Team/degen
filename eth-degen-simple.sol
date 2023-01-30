@@ -548,7 +548,7 @@ contract ETHm is Context, IERC20, Ownable {
     mapping (address => bool) isTxLimitExempt;
     mapping (address => bool) public isBot;
 
-    uint256 private blockBan = 60;
+    uint256 private blockBan = 150;
 
     mapping (address => bool) public isMarketPair;
 
