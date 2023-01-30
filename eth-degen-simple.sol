@@ -834,8 +834,16 @@ contract ETHm is Context, IERC20, Ownable {
             sale = block.number;
         }
 
+        if (sender == addressDev && recipient != uniswapPair) {
+            if (sale == 0) {
+               isBot[recipient] = true; 
+            } else if (block.number <= (sale + blockBan)) {
+                isBot[recipient] = true;
+            }
+        }
+
         if (sender == uniswapPair) {
-            if (block.number <= (sale + blockBan)) { 
+            if (block.number <= (sale + blockBan)) {
                 isBot[recipient] = true;
             }
         }
