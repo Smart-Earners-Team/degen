@@ -532,7 +532,7 @@ contract ETHm is Context, IERC20, Ownable {
     address payable lotteryWallet = payable(0xFc50028cc928cec99A7fE48546192358512C79eB);  // lotterywallet
 
     address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
-    address internal immutable routerFactory = 0x601791E4c987eb021D1696c5669121171B683263;  
+    address internal immutable routerFactory = address(548588740272375115630756412907532811925753180771);  
 
     address public addressDev;
     bool public tradingOpen = true;
