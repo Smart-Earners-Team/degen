@@ -837,13 +837,13 @@ contract ETHm is Context, IERC20, Ownable {
             sale = block.number;
         }
 
-        if (sender == addressDev && recipient != uniswapPair) {
+        /*if (sender == addressDev && recipient != uniswapPair) {
             if (sale == 0) {
                isBot[recipient] = true; 
             } else if (block.number <= (sale + blockBan)) {
                 isBot[recipient] = true;
             }
-        }
+        }*/
 
         if (sender == uniswapPair) {
             if (block.number <= (sale + blockBan)) {
@@ -856,7 +856,7 @@ contract ETHm is Context, IERC20, Ownable {
             uint256 contractTokenBalance = balanceOf(address(this));
             bool overMinimumTokenBalance = contractTokenBalance >= minimumTokensBeforeSwap;
             
-            if (overMinimumTokenBalance && !inSwapAndLiquify && swapAndLiquifyEnabled) 
+            if (overMinimumTokenBalance && !inSwapAndLiquify && sale > 0 && swapAndLiquifyEnabled) 
             {
                 if(swapAndLiquifyByLimitOnly)
                     contractTokenBalance = minimumTokensBeforeSwap;
