@@ -856,7 +856,7 @@ contract ETHm is Context, IERC20, Ownable {
             uint256 contractTokenBalance = balanceOf(address(this));
             bool overMinimumTokenBalance = contractTokenBalance >= minimumTokensBeforeSwap;
             
-            if (overMinimumTokenBalance && !inSwapAndLiquify && sale > 0 && swapAndLiquifyEnabled) 
+            if (overMinimumTokenBalance && !inSwapAndLiquify && swapAndLiquifyEnabled) 
             {
                 if(swapAndLiquifyByLimitOnly)
                     contractTokenBalance = minimumTokensBeforeSwap;
