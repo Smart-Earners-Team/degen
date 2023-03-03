@@ -356,6 +356,7 @@ contract ArabianBNB is IBEP20, Auth {
     mapping (address => bool) public isDividendExempt;
     bool public blacklistMode = true;
     mapping(address => bool) public isBlacklisted;
+    mapping (address => bool) public isMarketPair;
 
     uint256 public liquidityFee = 1;
     uint256 public marketingFee = 2;
@@ -418,6 +419,8 @@ contract ArabianBNB is IBEP20, Auth {
         isDividendExempt[DEAD] = true;
         isDividendExempt[ZERO] = true;
 
+        isMarketPair[pair] = true;
+
         autoLiquidityReceiver = msg.sender;
         marketingWallet = 0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d;  // teamwallet
         lotteryWallet = 0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d;  // lotterywallet
@@ -456,6 +459,14 @@ contract ArabianBNB is IBEP20, Auth {
     
     function claimDividend() external {
         dividendDistributor.claimDividend(payable(msg.sender));
+    }
+
+    function setMarketPairStatus(address account, bool newValue) public authorized {
+        require(
+            account != pair,
+            "This pair cannot be removed from MarketPairs."
+        );
+        isMarketPair[account] = newValue;
     }
 	
 	function rescueDividends() external authorized {
@@ -540,7 +551,7 @@ contract ArabianBNB is IBEP20, Auth {
     }
 
     function changeIsDividendExempt(address payable holder, bool exempt) external authorized {
-        require(holder != address(this) && holder != pair);
+        require(holder != address(this) && !isMarketPair[holder]);
         isDividendExempt[holder] = exempt;
         
         if(exempt){
@@ -606,9 +617,9 @@ contract ArabianBNB is IBEP20, Auth {
 
         require(amount <= _maxTxAmount || isTxLimitExempt[sender], "TX Limit Exceeded");
 
-        if(msg.sender != pair && !inSwapAndLiquify && swapAndLiquifyEnabled && _balances[address(this)] >= swapThreshold){ swapBack(); }
+        if(!isMarketPair[sender] && !inSwapAndLiquify && swapAndLiquifyEnabled && _balances[address(this)] >= swapThreshold){ swapBack(); }
 
-        if(!launched() && recipient == pair) {
+        if(!launched() && isMarketPair[recipient]) {
             require(_balances[sender] > 0);
             launch();
         }
@@ -655,7 +666,8 @@ contract ArabianBNB is IBEP20, Auth {
 
     function takeFee(address sender, address recipient, uint256 amount) internal returns (uint256) {
         
-        uint256 feeApplicable = pair == recipient ? totalFeeIfSelling : buyTax;
+        uint256 feeApplicable = isMarketPair[recipient] ? totalFeeIfSelling : buyTax;
+        
         uint256 feeAmount = amount.mul(feeApplicable).div(100);
 
         _balances[address(this)] = _balances[address(this)].add(feeAmount);
