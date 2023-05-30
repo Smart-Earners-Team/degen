@@ -784,16 +784,16 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
     ) external;
 }
 
-contract GeckoAI is Context, IERC20, Ownable {
+contract ethMonster is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
-    string private _name = "Gecko AI";
-    string private _symbol = "GECKO";
+    string private _name = "ethMonster";
+    string private _symbol = "ETHM";
     uint8 private _decimals = 9;
 
     address payable public marketingWalletAddress =
-        payable(0xe9981e70b09b614ADF1E540ebA53c6B2Ddf3a783); // marketing wallet
+        payable(0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d); // marketing wallet
     address public immutable deadAddress =
         0x000000000000000000000000000000000000dEaD;
     address internal immutable Factory;
