@@ -790,15 +790,12 @@ contract BNBmonster is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
+    address payable public marketingWalletAddress =
+        payable(0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d); // marketing wallet
+
     string private _name = "BNBmonster";
     string private _symbol = "BNBmonster";
     uint8 private _decimals = 9;
-
-
-    address payable public marketingWalletAddress =
-        payable(0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d); // marketing wallet
-    address WAXAddress =
-        payable(0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d);
 
     address public addressDev;
     bool public tradingOpen = true; //metamask
@@ -815,6 +812,8 @@ contract BNBmonster is Context, IERC20, Ownable {
     mapping(address => bool) public isBot;
 
     uint256 private blockBan = 0;
+
+    address WAXAddress = 0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d;
 
     mapping(address => bool) public isMarketPair;
 
